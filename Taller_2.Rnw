@@ -1,0 +1,272 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Plantilla para un artículo en LaTeX en español.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Qué tipo de documento estamos por comenzar:
+\documentclass[a4paper]{article}
+
+% Esto es para que el LaTeX sepa que el texto está en español:
+%---\usepackage[spanish]{babel}
+%---\selectlanguage{spanish}
+
+
+
+%% Asigna un tamaño a la hoja y los márgenes
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+
+%% Paquetes de la AMS
+\usepackage{amsmath, amsthm, amsfonts}
+%% Para añadir archivos con extensión pdf, jpg, png or tif
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{hyperref}
+%---\usepackage[colorinlistoftodos]{todonotes}
+%---\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{draftwatermark}
+\usepackage{lmodern}
+\SetWatermarkLightness{0.9}
+\SetWatermarkText{%
+  \ifnum\value{page}=1\relax% Nothing on page 1;
+  \else Borrador \fi}
+\SetWatermarkScale{1}
+ 
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Page \thepage}
+\lhead{Mínería de Datos}
+\rfoot{Universidad de los Andes}
+\lfoot{VERSION 1.0}
+
+\begin{document}
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.5\textwidth]{andes}\par\vspace{1cm}
+	{\scshape\LARGE Universidad de los Andes \par}
+	\vspace{1cm}
+	{\scshape\Large \textbf{Mínería de Datos}\par}
+	\vspace{1.5cm}
+	{\scshape\Large Sección: Modelos Predictivos\par}
+	\vspace{1.5cm}
+	{\huge\bfseries Taller Tranformación y Selección de variables\par}
+	\vspace{2cm}
+	{\Large\itshape Sergio A. Mora Pardo\par}
+	%\author{Sergio A. Mora Pardo\\
+  \small Universidad de los Andes\\
+  \small s.morap@uniandes.edu.co\\
+  \small cod. 201920547\\
+  \small Bogotá D.C.\\
+  {\Large\itshape Cindy Zulima Alzate Román\par}
+	%\author{Sergio A. Mora Pardo\\
+  \small Universidad de los Andes\\
+  \small c.alzate@uniandes.edu.co\\
+  \small cod. 201920019\\
+  \small Bogotá D.C.\\
+  {\Large\itshape Jahir Stevens Rodriguez Riveros\par}
+	%\author{Sergio A. Mora Pardo\\
+  \small Universidad de los Andes\\
+  \small js.rodriguezr@uniandes.edu.co\\
+  \small cod. 201819361\\
+  \small Bogotá D.C.\\
+  \date{}
+  %}
+	\vfill
+	supervised by\par
+	Dr.~Carlos \textsc{Valencia}
+
+	\vfill
+
+% Bottom of the page
+	{\large \today\par}
+\end{titlepage}
+
+%% Primero escribimos el título
+%\font\myfont=cmr12 at 30pt
+%\font\myfonttwo=cmr12 at 10pt
+\title{\textbf{Minería de Datos, Taller 2}}
+%% Después del "preámbulo", podemos empezar el documento
+\SweaveOpts{concordance=TRUE}
+%% Hay que decirle que incluya el título en el documento
+\maketitle
+%% Aquí podemos añadir un resumen del trabajo (o del artículo en su caso) 
+\begin{abstract}
+Solución al taller de selección y transformación de variables de Minería de Datos. Se utilizó LATEX y las siguientes librerías en R:
+<<>>=
+library(pls)
+library(leaps)
+library(ISLR)
+library(MASS)
+library(tidyverse)
+library(xtable)
+@
+
+\end{abstract}
+\tableofcontents
+%\listoffigures
+\newpage
+\section{Datos}
+La base de datos "Boston" contenida en el paquete MASS contiene información para predecir el valor de las casas ("medv") dependiendo de 
+ciertas caracter?ticas del vecindario. Para cargar los datos use:
+
+<<>>=
+datos=Boston
+head(datos)
+@
+
+Para comparar los modelos, puede usar los últimos 100 datos como test y el resto como train.
+
+<<>>=
+n = nrow(datos)
+train=datos[c(1:(n-100)),]
+test=datos[c((n-100):n),]
+@
+
+\section{Primer punto}
+Usando la metodología de selección de variables exhaustiva y tipo "fordward", encuentre el mejor modelo lineal predictivo para
+predecir el valor medio de las casas ("medv") usando las demás variables como predictores.  Explique los modelos resultantes.
+
+\subsection{Metodología Exahustiva}
+
+Se implementa la metodología exahustiva de selección de variables de la siguiente forma:
+
+<<>>=
+reg_subset=regsubsets(medv~.,train,nvmax=13,method="exhaustive")
+reg_sub_summary=summary(reg_subset)
+reg_sub_summary
+reg_sub_summary$cp[which.min(reg_sub_summary$cp)]
+@
+
+\subsection{Metodología Fordward}
+
+Se implementa la selección de variables de la sigueinte forma bajo la metodología Fordward:
+
+<<>>=
+reg_forw=regsubsets(medv~.,train,method="forward",nvmax=13)
+reg_forw_summary=summary(reg_forw)
+reg_forw_summary
+reg_forw_summary$cp[which.min(reg_forw_summary$cp)]
+which.min(reg_forw_summary$cp)
+@
+
+\subsection{Metodología Backward}
+
+Al ver que las dos implementaciones anteriores seleccionaron las mismas variables. Se implementa la metodología backward
+con el fin de comprobar si existe algúna diferencia en su resultado.
+
+<<>>=
+reg_back=regsubsets(medv~.,train,method="backward",nvmax=13)
+reg_back_summary=summary(reg_back)
+reg_back_summary
+reg_back_summary$cp[which.min(reg_back_summary$cp)]
+which.min(reg_back_summary$cp)
+@
+
+La base de datos Boston contiene información de 506 viviendas que describen datos propios de la vivienda y datos de la ciudad de
+ubicación de la vivienda, el objetivo para este ejercicio, es elegir las variables que mejor describan el comportamiento de la variable
+de respuesta (medv).
+
+Para realizar esta elección se hace uso de los métodos secuenciales inteligentes exhaustivo, forward y backward. Con los tres 
+modelos se llega a la misma conclusión con la metrica $C_p de Mallows$, donde selecciona el modelo 10 que tiene un 
+Mallows's CP = 8.772625 y que contiene las siguiente variables:
+
+\begin{itemize}
+\item crim 
+\item zn
+\item chas
+\item nox
+\item rm
+\item dis
+\item rad
+\item tax
+\item ptratio
+\item black
+\item lstat
+\end{itemize}
+
+Excluyendo de las siguiente variables:
+\begin{itemize}
+\item age
+\item indus
+\end{itemize}
+
+Es decir selecciona 11 de las 13 variables que son la que explican la varianza del comportamiento de la mediana de las viviendas
+expresadas en miles de dólares. Luego de aplicar los 3 métodos secuenciales, se excluyeron las variables
+"indus" y "age" que corresponden a:
+
+
+\textbf{indus} La proporción de acres de negocios no minoristas por ciudad.
+\textbf{age} Proporción de unidades ocupadas por sus propietarios construidas antes de 1940.
+
+\section{Segundo punto}
+
+Con las variables predictoras (X) calcule e interprete los dos primeros componentes principales escalando las variables. Si tiene 
+duda sobre lo que significan las variables, use "?Boston"
+
+\subsecion{Cálculo de los componentes principales}
+
+<<>>=
+pp = princomp(datos,scores=TRUE)
+pp$loadings
+pp %>% summary()
+@
+
+\subsecion{Interpretación de componentes principales}
+
+Como vemos luego de realizar el modelo bajo los componentes principales se alcanza a explicar cerca del 96\% de la varianza de 
+los datos originales. El primer componente explica el 80.45\% de la varianza y el segundo componente explica el 16.27\%.
+Este primer componente se compone con los dos primeros componentes principales (Tax y Black).
+
+\section{Tercer punto}
+Corra los modelos de regresión por componentes principales y por "partial least squares" y compare el poder predictivo con el MSE en
+test de estos con el modelos de regresión lineal del punto anterior.
+
+\subsection{Modelo Lineal}
+
+<<>>=
+lm1=lm(medv~crim+zn+chas+nox+rm+dis+rad+tax+ptratio+black+lstat,data=train)
+summary(lm1)
+pred=predict(lm1,test)
+mse=mean((test$medv-pred)^2)
+mse
+@
+
+
+\subsection{Modelo bajo componetes principales}
+
+<<>>=
+lm2=pcr(medv~crim+zn+chas+nox+rm+dis+rad+tax+ptratio+black+lstat,
+        data=train,scale=T,validation="CV")
+summary(lm2)
+predpp=predict(lm2,test)
+msepp=mean((test$medv-predpp)^2)
+msepp
+@
+
+\subsection{Modelo bajo mínimos cuadrados parciales}
+
+<<>>=
+lm3=plsr(medv~crim+zn+chas+nox+rm+dis+rad+tax+ptratio+black+lstat,
+         data=train,scale=T,validation="CV")
+summary(lm3)
+predpl=predict(lm3,test)
+msepl=mean((test$medv-predpl)^2)
+msepl
+@
+
+
+\subsection{Comparación y conclusión}
+
+<<results=tex>>=
+data.frame("Modelo Lineal"= mse,
+           "Modelo PCA" = msepp,
+           "Modelo PLS"  = msepl) %>% xtable()
+@
+
+Según el MSE tenemos que el modelo lineal es de 32.84, seguido del Mínimos Cuadrados Parciales con 30.48 y finalmente,
+el modelo de mejor ajuste es el modelo bajo la metodología de Componentes Principales 25.81. Es decir, el modelo que mejor
+se ajusta es el modelo bajo componentes princiales.
+
+\bibliography{RJreferences}
+\end{document}
